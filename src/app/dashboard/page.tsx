@@ -1,0 +1,245 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useSession } from "@/context/session-context";
+import { ApiError, apiFetchAuthorized } from "@/lib/api";
+import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { PostForm } from "@/components/dashboard/post-form";
+import { FeedList, FeedPost } from "@/components/dashboard/feed-list";
+import { FollowPanel } from "@/components/dashboard/follow-panel";
+
+type FeedResponse = {
+  page: number;
+  posts: FeedPost[];
+};
+
+type SearchUser = {
+  id: number;
+  username: string;
+};
+
+export default function DashboardPage() {
+  const router = useRouter();
+  const { session, initializing, clearSession } = useSession();
+
+  const [feed, setFeed] = useState<FeedPost[]>([]);
+  const [feedLoading, setFeedLoading] = useState(false);
+  const [feedError, setFeedError] = useState<string | null>(null);
+
+  const [postLoading, setPostLoading] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleUnauthorized = useCallback(() => {
+    clearSession();
+    router.replace("/auth/login");
+  }, [clearSession, router]);
+
+  const loadFeed = useCallback(async () => {
+    if (!session) {
+      return;
+    }
+
+    setFeedLoading(true);
+    setFeedError(null);
+
+    try {
+      const data = await apiFetchAuthorized<FeedResponse>("/api/feed", session.token);
+      setFeed(Array.isArray(data.posts) ? data.posts : []);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        handleUnauthorized();
+        return;
+      }
+
+      const message =
+        err instanceof ApiError
+          ? err.message
+          : "Gagal memuat feed. Coba lagi nanti.";
+      setFeedError(message);
+    } finally {
+      setFeedLoading(false);
+    }
+  }, [session, handleUnauthorized]);
+
+  useEffect(() => {
+    if (!initializing && !session) {
+      router.replace("/auth/login");
+    }
+  }, [initializing, session, router]);
+
+  useEffect(() => {
+    if (session) {
+      loadFeed();
+    }
+  }, [session, loadFeed]);
+
+  const handleCreatePost = async (content: string) => {
+    if (!session) {
+      throw new Error("Sesi berakhir. Silakan login kembali.");
+    }
+
+    setPostLoading(true);
+
+    try {
+      await apiFetchAuthorized("/api/posts", session.token, {
+        method: "POST",
+        body: JSON.stringify({ content }),
+      });
+
+      await loadFeed();
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        handleUnauthorized();
+        throw err;
+      }
+
+      const message =
+        err instanceof ApiError
+          ? err.message
+          : "Gagal membuat postingan. Coba lagi.";
+      throw new Error(message);
+    } finally {
+      setPostLoading(false);
+    }
+  };
+
+  const handleFollow = async (userId: string, action: "follow" | "unfollow") => {
+    if (!session) {
+      throw new Error("Sesi berakhir. Silakan login kembali.");
+    }
+
+    setFollowLoading(true);
+
+    try {
+      await apiFetchAuthorized<{ message: string }>(
+        `/api/follow/${userId}`,
+        session.token,
+        {
+          method: action === "follow" ? "POST" : "DELETE",
+        }
+      );
+
+      await loadFeed();
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        handleUnauthorized();
+        throw err;
+      }
+
+      const message =
+        err instanceof ApiError
+          ? err.message
+          : action === "follow"
+          ? "Gagal mengikuti pengguna."
+          : "Gagal berhenti mengikuti pengguna.";
+      throw new Error(message);
+    } finally {
+      setFollowLoading(false);
+    }
+  };
+
+  const searchUsers = useCallback(
+    async (query: string) => {
+      if (!session) {
+        throw new Error("Sesi berakhir. Silakan login kembali.");
+      }
+
+      const trimmed = query.trim();
+      if (!trimmed) {
+        return [] as SearchUser[];
+      }
+
+      try {
+        const params = new URLSearchParams({ q: trimmed, limit: "5" });
+        const data = await apiFetchAuthorized<{ users: SearchUser[] }>(
+          `/api/users/search?${params.toString()}`,
+          session.token
+        );
+        return Array.isArray(data.users) ? data.users : [];
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 401) {
+          handleUnauthorized();
+        }
+
+        const message = err instanceof ApiError ? err.message : "Gagal mencari pengguna.";
+        throw new Error(message);
+      }
+    },
+    [session, handleUnauthorized]
+  );
+
+  const handleRefresh = async () => {
+    if (!session) {
+      return;
+    }
+
+    setIsRefreshing(true);
+    await loadFeed();
+    setIsRefreshing(false);
+  };
+
+  if (initializing) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-100 dark:bg-slate-950">
+        <p className="text-sm text-slate-600 dark:text-slate-300">Menyiapkan aplikasi...</p>
+      </main>
+    );
+  }
+
+  if (!session) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-100 dark:bg-slate-950">
+        <p className="text-sm text-slate-600 dark:text-slate-300">Mengalihkan ke halaman login...</p>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 px-4 py-6 text-slate-100 sm:px-6 sm:py-12">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 sm:gap-8 lg:gap-10">
+        <DashboardHeader onLogout={() => router.replace("/auth/login")} />
+
+        <section className="grid gap-6 sm:gap-8 lg:grid-cols-[2fr_1fr]">
+          <div className="space-y-6 sm:space-y-8">
+            <PostForm onSubmit={handleCreatePost} loading={postLoading} />
+            <FeedList
+              posts={feed}
+              loading={feedLoading}
+              error={feedError}
+              onRefresh={handleRefresh}
+              isRefreshing={isRefreshing}
+            />
+          </div>
+
+          <aside className="space-y-6 sm:space-y-8">
+            <FollowPanel
+              loading={followLoading}
+              onFollow={async (userId) => handleFollow(userId, "follow")}
+              onUnfollow={async (userId) => handleFollow(userId, "unfollow")}
+              onSearch={searchUsers}
+            />
+
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300/80 backdrop-blur sm:p-6">
+              <h2 className="flex items-center gap-2 text-lg font-semibold text-white">
+                <svg className="h-5 w-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Tips Penggunaan
+              </h2>
+              <ul className="mt-4 list-disc space-y-2 pl-5 text-xs sm:text-sm">
+                <li>Postingan hanya berupa teks dan dibatasi 200 karakter.</li>
+                <li>Ikuti pengguna lain untuk melihat kabar mereka dalam feed.</li>
+                <li>Gunakan tombol segarkan jika postingan baru belum muncul.</li>
+                <li>Anda dapat keluar kapan saja melalui tombol keluar.</li>
+              </ul>
+            </div>
+          </aside>
+        </section>
+      </div>
+    </main>
+  );
+}
+
