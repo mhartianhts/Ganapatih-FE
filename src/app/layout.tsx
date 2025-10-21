@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Tikkommartik",
-  description: "Tikkommartik is a platform for AI-powered content creation",
+  title: "Ganapatih",
+  description: "Ganapatih is a platform for AI-powered content creation",
 };
 
 export default function RootLayout({

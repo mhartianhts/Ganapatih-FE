@@ -56,7 +56,7 @@ export default function RegisterPage() {
     <AuthLayout>
       <AuthCard
         title="Daftar Akun Baru"
-        description="Mulai perjalanan Anda di Tikkommartik dan jelajahi kabar terbaru dari komunitas."
+        description="Mulai perjalanan Anda di Ganapatih dan jelajahi kabar terbaru dari komunitas."
         footer={
           <span>
             Sudah punya akun?

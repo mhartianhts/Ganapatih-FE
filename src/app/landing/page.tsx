@@ -8,7 +8,7 @@ export default function LandingPage() {
       <div className="mx-auto grid w-full max-w-6xl gap-6 rounded-3xl border border-white/10 bg-white/5 p-6 text-center backdrop-blur sm:gap-8 sm:rounded-[40px] sm:p-8 lg:gap-10 lg:p-12">
         <div className="space-y-3 sm:space-y-4">
           <p className="text-xs uppercase tracking-[0.6em] text-indigo-300/80">
-            Tikkommartik
+            Ganapatih
           </p>
           <h1 className="text-3xl font-semibold sm:text-4xl lg:text-5xl">
             Simple News Feed System
