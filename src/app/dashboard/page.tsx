@@ -198,12 +198,13 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 px-4 py-6 text-slate-100 sm:px-6 sm:py-12">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 sm:gap-8 lg:gap-10">
+    <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 px-4 py-6 text-slate-100 sm:px-6 sm:py-8">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 sm:gap-8">
         <DashboardHeader onLogout={() => router.replace("/auth/login")} />
 
-        <section className="grid gap-6 sm:gap-8 lg:grid-cols-[2fr_1fr]">
-          <div className="space-y-6 sm:space-y-8">
+        <section className="grid gap-6 sm:gap-6 lg:grid-cols-[1fr_420px] xl:gap-8">
+          {/* Main Content */}
+          <div className="flex flex-col gap-6 sm:gap-6">
             <PostForm onSubmit={handleCreatePost} loading={postLoading} />
             <FeedList
               posts={feed}
@@ -214,29 +215,72 @@ export default function DashboardPage() {
             />
           </div>
 
-          <aside className="space-y-6 sm:space-y-8">
+          {/* Sidebar - Sticky */}
+          <aside className="hidden lg:block">
+            <div className="sticky top-6 space-y-6">
+              <FollowPanel
+                loading={followLoading}
+                onFollow={async (userId) => handleFollow(userId, "follow")}
+                onUnfollow={async (userId) => handleFollow(userId, "unfollow")}
+                onSearch={searchUsers}
+              />
+
+              <div className="group rounded-3xl border border-white/10 bg-gradient-to-br from-white/10 via-white/5 to-transparent p-5 backdrop-blur-xl shadow-2xl transition-all duration-300 hover:border-white/20 hover:shadow-indigo-500/10 sm:p-6">
+                <div className="mb-4 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/30">
+                    <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <h2 className="text-xl font-bold tracking-tight text-white">Tips Penggunaan</h2>
+                </div>
+                <ul className="space-y-3 text-sm leading-relaxed text-slate-300/80">
+                  <li className="flex items-start gap-2.5">
+                    <div className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-indigo-500/20 text-indigo-300">
+                      <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <span>Postingan hanya berupa teks dan dibatasi 200 karakter.</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <div className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-indigo-500/20 text-indigo-300">
+                      <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <span>Ikuti pengguna lain untuk melihat kabar mereka dalam feed.</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <div className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-indigo-500/20 text-indigo-300">
+                      <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <span>Gunakan tombol segarkan jika postingan baru belum muncul.</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <div className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-indigo-500/20 text-indigo-300">
+                      <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <span>Anda dapat keluar kapan saja melalui tombol keluar.</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </aside>
+
+          {/* Mobile Sidebar */}
+          <div className="space-y-6 lg:hidden">
             <FollowPanel
               loading={followLoading}
               onFollow={async (userId) => handleFollow(userId, "follow")}
               onUnfollow={async (userId) => handleFollow(userId, "unfollow")}
               onSearch={searchUsers}
             />
-
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300/80 backdrop-blur sm:p-6">
-              <h2 className="flex items-center gap-2 text-lg font-semibold text-white">
-                <svg className="h-5 w-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Tips Penggunaan
-              </h2>
-              <ul className="mt-4 list-disc space-y-2 pl-5 text-xs sm:text-sm">
-                <li>Postingan hanya berupa teks dan dibatasi 200 karakter.</li>
-                <li>Ikuti pengguna lain untuk melihat kabar mereka dalam feed.</li>
-                <li>Gunakan tombol segarkan jika postingan baru belum muncul.</li>
-                <li>Anda dapat keluar kapan saja melalui tombol keluar.</li>
-              </ul>
-            </div>
-          </aside>
+          </div>
         </section>
       </div>
     </main>
